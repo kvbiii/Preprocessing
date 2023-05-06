@@ -1,0 +1,7 @@
+statsmodels
+numpy
+scikit-learn
+torch
+plotly
+chart_studio
+pandas
