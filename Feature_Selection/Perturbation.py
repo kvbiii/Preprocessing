@@ -46,11 +46,12 @@ class Perturabtion():
                 X_copy = self.X.copy()
             inner_scores = []
             for j in range(self.n_repeats):
-                #Zmieniamy rozkład dla jednej z kolumn o losowe wartości z przedziału (-0.4, 0.4)
-                perturbation = np.random.normal(0.0, 0.2, size=X_copy.shape[:-1])
+                #Change distribution of our column i with random values from - median to median of this column values
                 if(X_copy.ndim == 2):
+                    perturbation = np.random.uniform(low=-np.median(X_copy[:, i]), high=np.median(X_copy[:, i]), size=X_copy.shape[:-1])
                     X_copy[:,i] = X_copy[:,i] + perturbation
                 else:
+                    perturbation = np.random.uniform(low=-np.median(X_copy[:,:, i]), high=np.median(X_copy[:,:, i]), size=X_copy.shape[:-1])
                     X_copy[:,:,i] = X_copy[:,:,i] + perturbation
                 if(self.metric_type == "preds"):
                     y_pred_inner = self.algorithm.predict(X_copy)
