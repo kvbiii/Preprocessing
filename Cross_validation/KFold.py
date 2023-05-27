@@ -4,8 +4,9 @@ path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
 class KFold():
-    def __init__(self, n_splits, shuffle=False, stratify=False):
-        random.seed(17)
+    def __init__(self, n_splits, shuffle=False, stratify=False, random_state=17):
+        self.random_state = random_state
+        random.seed(self.random_state)
         self.n_splits = n_splits
         self.shuffle = shuffle
         self.stratify = stratify         
