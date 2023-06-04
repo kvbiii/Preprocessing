@@ -7,10 +7,10 @@ class Leave_One_Feature_Out():
     def __init__(self, algorithm, metric):
         self.algorithm = algorithm
         metrics = {"accuracy": [lambda y, y_pred: accuracy_score(y, y_pred), "preds"],
-                     "roc_auc": [lambda y, y_pred: roc_auc_score(y, y_pred), "probs"],
-                     "neg_mse": [lambda y, y_pred: -mean_squared_error(y, y_pred), "preds"],
-                     "neg_rmse": [lambda y, y_pred: -mean_squared_error(y, y_pred)**0.5, "preds"],
-                     "neg_mae": [lambda y, y_pred: -mean_absolute_error(y, y_pred), "preds"]}
+                    "roc_auc": [lambda y, y_pred: roc_auc_score(y, y_pred), "probs"],
+                    "neg_mse": [lambda y, y_pred: -mean_squared_error(y, y_pred), "preds"],
+                    "neg_rmse": [lambda y, y_pred: -mean_squared_error(y, y_pred)**0.5, "preds"],
+                    "neg_mae": [lambda y, y_pred: -mean_absolute_error(y, y_pred), "preds"]}
         if metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
         self.metric=metric

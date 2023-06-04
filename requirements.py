@@ -15,9 +15,9 @@ import pandas as pd
 from sklearn.tree import *
 from torch.autograd import Variable
 class RMSELoss(nn.Module):
-  def __init__(self):
-      super().__init__()
-      self.mse = nn.MSELoss()
-  def forward(self, y_true, y_pred):
-      return torch.sqrt(self.mse(y_true, y_pred))
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
+    def forward(self, y_true, y_pred):
+        return torch.sqrt(self.mse(y_true, y_pred))
 from scipy.stats import rankdata

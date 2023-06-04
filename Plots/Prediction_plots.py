@@ -9,7 +9,7 @@ class Prediction_plots():
     def compare_predictions_with_real_values(self, y_true, y_pred, metric):
         metrics = {"mse": torch.nn.MSELoss(),
                         "rmse": RMSELoss(),
-                         "mae": torch.nn.L1Loss()}
+                        "mae": torch.nn.L1Loss()}
         if metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
         eval_metric = metrics[metric]
