@@ -90,3 +90,16 @@ class Prediction_plots():
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
         fig['data'][0]['showscale'] = True
         fig.show("png")
+
+    def mean_squared_error(self, y_true, y_pred):
+        return np.mean((y_true - y_pred) ** 2)
+    def root_mean_squared_error(self, y_true, y_pred):
+        return np.sqrt(np.mean((y_true - y_pred) ** 2))
+    def mean_absolute_error(self, y_true, y_pred):
+        return np.mean(np.abs(y_true - y_pred))
+    def mean_absolute_percentage_error(self, y_true, y_pred):
+        return np.mean(np.abs((y_true - y_pred) / y_true))
+    def median_absolute_error(self, y_true, y_pred):
+        return np.median(np.abs(y_true - y_pred))
+    def mean_squared_logarithm_error(self, y_true, y_pred):
+        return np.mean((np.log(np.abs(1+y_true))-np.log(np.abs(1+y_pred)))**2)
