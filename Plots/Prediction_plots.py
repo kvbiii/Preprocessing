@@ -6,18 +6,23 @@ from requirements import *
 class Prediction_plots():
     def __init__(self):
         pass
-    def compare_predictions_with_real_values(self, y_true, y_pred, metric):
-        metrics = {"mse": torch.nn.MSELoss(),
-                        "rmse": RMSELoss(),
-                        "mae": torch.nn.L1Loss()}
-        if metric not in metrics:
+    def compare_predictions_with_real_values(self, y_true, y_pred, metric="MSE"):
+        self.metric = metric
+        metrics = { "MSE": self.mean_squared_error(y_true, y_pred),
+                    "RMSE": self.root_mean_squared_error(y_true, y_pred),
+                    "MAE": self.mean_absolute_error(y_true, y_pred),
+                    "MAPE": self.mean_absolute_percentage_error(y_true, y_pred),
+                    "MedAE": self.median_absolute_error(y_true, y_pred),
+                    "MSLE": self.mean_squared_logarithm_error(y_true, y_pred)}
+        if self.metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
-        eval_metric = metrics[metric]
-        y_true = y_true.squeeze(1)
+        self.eval_metric = np.round(metrics[self.metric], 5)
+        if(type(y_true) == torch.Tensor):
+            y_true = y_true.squeeze(1)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_true.flatten().tolist(), mode='lines', line=dict(color="orange"), name="Real values"))
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_pred.flatten().tolist(), mode='lines', line=dict(color="blue"), name="Predictions"))
-        fig.update_layout(template="simple_white", width=600, height=600, title="Predictions and Real values", xaxis_title="", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(metric.upper(), eval_metric(y_true, y_pred).item()))
+        fig.update_layout(template="simple_white", width=600, height=600, title="Predictions and Real values", xaxis_title="", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(self.metric.upper(), self.eval_metric))
         fig.show("png")
 
     def plot_losses(self, train_loss, valid_loss):
@@ -59,6 +64,26 @@ class Prediction_plots():
         z_text = [[str(y) for y in x] for x in z]
         x = ['0', '1']
         y =  ['0', '1']
+        fig = ff.create_annotated_heatmap(z, x=x, y=y, annotation_text=z_text, colorscale='blues')
+        fig.update_layout(template="simple_white", width=600, height=600, showlegend=False, font=dict(family="Times New Roman",size=16,color="Black"), title_text="<b>Normalized confusion matrix<br>Balanced accuracy score: {}<b>".format(np.round(balanced_accuracy_score(y_true, y_pred), 4)), title_x=0.5, title_y=0.97)
+        fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=-0.15,y=0.5,showarrow=False,text="Actual",textangle=-90,xref="paper",yref="paper"))
+        fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=0.5,y=1.1,showarrow=False,text="Predictions",xref="paper",yref="paper"))
+        fig['data'][0]['showscale'] = True
+        fig.show("png")
+    
+    def multilabel_conf_matrix(self, y_true, y_pred, labels, normalize=False):
+        if(normalize==True):
+            CM = confusion_matrix(y_true, y_pred, normalize='true')
+        else:
+            CM = confusion_matrix(y_true, y_pred, normalize=None)
+        z = []
+        for i in range(len(labels)):
+            z.append([])
+            for j in range(len(labels)):
+                z[i].append(np.round(CM[i][j], 3))
+        z_text = [[str(y) for y in x] for x in z]
+        x = [i for i in labels]
+        y =  [i for i in labels]
         fig = ff.create_annotated_heatmap(z, x=x, y=y, annotation_text=z_text, colorscale='blues')
         fig.update_layout(template="simple_white", width=600, height=600, showlegend=False, font=dict(family="Times New Roman",size=16,color="Black"), title_text="<b>Normalized confusion matrix<br>Balanced accuracy score: {}<b>".format(np.round(balanced_accuracy_score(y_true, y_pred), 4)), title_x=0.5, title_y=0.97)
         fig.add_annotation(dict(font=dict(family="Times New Roman",size=20,color="Black"),x=-0.15,y=0.5,showarrow=False,text="Actual",textangle=-90,xref="paper",yref="paper"))
