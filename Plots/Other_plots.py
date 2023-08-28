@@ -3,9 +3,11 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
+
 class Other_Plots():
-    def __init__(self) -> None:
+    def __init__(self):
         pass
+
     def cross_validation_split(self, X, y, n_splits, cv, n_repeats=1):
         fig = go.Figure()
         if(len(X) > 100):
@@ -29,3 +31,6 @@ class Other_Plots():
                 n_repeats = n_repeats+1
         fig.update_layout(template="simple_white",  xaxis_title="Indices", width=1000, height=1000, font=dict(family="Times New Roman",size=16,color="Black"),  yaxis=dict(ticks="outside", tickvals=[i for i in range(1, n_repeats*n_splits+1)], ticktext=["Fold {}".format(n_splits if i%n_splits==0 else i%n_splits) for i in range(1, n_repeats*n_splits+1)]))
         fig.show("png")
+    
+    def boxplot_anova(self,):
+        pass
