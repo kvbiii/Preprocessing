@@ -3,6 +3,7 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
+
 class Prediction_plots():
     def __init__(self):
         pass
@@ -17,12 +18,12 @@ class Prediction_plots():
         if self.metric not in metrics:
             raise ValueError('Unsupported metric: {}'.format(metric))
         self.eval_metric = np.round(metrics[self.metric], 5)
-        if(type(y_true) == torch.Tensor):
-            y_true = y_true.squeeze(1)
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_true.flatten().tolist(), mode='lines', line=dict(color="orange"), name="Real values"))
         fig.add_trace(go.Scatter(x=[i for i in range(len(y_true))], y=y_pred.flatten().tolist(), mode='lines', line=dict(color="blue"), name="Predictions"))
-        fig.update_layout(template="simple_white", width=600, height=600, title="Predictions and Real values", xaxis_title="", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(self.metric.upper(), self.eval_metric))
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Predictions and Real values<b>", title_x=0.5, xaxis_title="Observation", yaxis_title="Values", font=dict(family="Times New Roman",size=16,color="Black"), legend_title_text='{}: {}'.format(self.metric.upper(), self.eval_metric))
         fig.show("png")
 
     def plot_losses(self, train_loss, valid_loss):
