@@ -5,3 +5,4 @@ torch
 plotly
 chart_studio
 pandas
+scipy
