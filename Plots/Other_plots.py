@@ -3,7 +3,7 @@ import sys
 path_root = Path(__file__).parents[1]
 sys.path.append(str(path_root))
 from requirements import *
-from sklearn.cluster import KMeans
+from sklearn.neighbors import NearestNeighbors
 
 class Other_Plots():
     def __init__(self):
@@ -122,6 +122,147 @@ class Other_Plots():
             plt.axhline(y=hline_level, color='r', linestyle='--')
         plt.show()
     
+    def elbow_original_plot(self, data, algorithm_instance, max_clusters=15):
+        data = self.check_2d_data(data=data)
+        sse = []
+        for k in range(1, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            sse_data = 0
+            for cluster in np.unique(algorithm_instance.labels_):
+                X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+                center_of_cluster = np.mean(X_cluster, axis=0)
+                sse_data += np.linalg.norm(X_cluster-center_of_cluster)**2
+            sse.append(sse_data)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[k for k in range(1, max_clusters+1)], y=[i for i in sse], mode='lines+markers', name="Original curve"))
+        fig.add_trace(go.Scatter(x=[1, max_clusters], y=[np.max(sse), 0], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0.75, max_clusters+0.5], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Number of clusters (k)", yaxis_title="Distortion Score", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Original elbow<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def elbow_normalized_plot(self, data, algorithm_instance, max_clusters=15):
+        data = self.check_2d_data(data=data)
+        sse = []
+        for k in range(1, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            sse_data = 0
+            for cluster in np.unique(algorithm_instance.labels_):
+                X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+                center_of_cluster = np.mean(X_cluster, axis=0)
+                sse_data += np.linalg.norm(X_cluster-center_of_cluster)**2
+            sse.append(sse_data)
+        scaled_sse = (sse-np.min(sse))/(np.max(sse)-np.min(sse))
+        cluster_range = [k for k in range(1, max_clusters+1)]
+        scaled_cluster_range = (cluster_range-np.min(cluster_range))/(np.max(cluster_range)-np.min(cluster_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_cluster_range, y=scaled_sse, mode='lines+markers', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[1, 0], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized number of clusters (k)", yaxis_title="Normalized distortion Score", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Normalized elbow<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def elbow_normalized_plot_with_perpendicular(self, data, algorithm_instance, max_clusters=15):
+        data = self.check_2d_data(data=data)
+        sse = []
+        for k in range(1, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            sse_data = 0
+            for cluster in np.unique(algorithm_instance.labels_):
+                X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+                center_of_cluster = np.mean(X_cluster, axis=0)
+                sse_data += np.linalg.norm(X_cluster-center_of_cluster)**2
+            sse.append(sse_data)
+        scaled_sse = (sse-np.min(sse))/(np.max(sse)-np.min(sse))
+        cluster_range = [k for k in range(1, max_clusters+1)]
+        scaled_cluster_range = (cluster_range-np.min(cluster_range))/(np.max(cluster_range)-np.min(cluster_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_cluster_range, y=scaled_sse, mode='lines+markers', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[1, 0], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        i = 0
+        a=1
+        b=1
+        c=-1
+        show=True
+        while(i < len(scaled_sse)):
+            x_0 = (b*(b*scaled_cluster_range[i]-a*scaled_sse[i])-a*c)/(a**2+b**2)
+            y_0 = (a*(-b*scaled_cluster_range[i]+a*scaled_sse[i])-b*c)/(a**2+b**2)
+            if(i > 0):
+                show=False
+            fig.add_trace(go.Scatter(x=[scaled_cluster_range[i], x_0], y=[scaled_sse[i], y_0], mode='lines+markers', marker=dict(color="grey"), name="Perpendicular lines", showlegend=show))
+            i = i + 1
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized number of clusters (k)", yaxis_title="Normalized distortion Score", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Normalized elbow with perpendicular lines<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def elbow_normalized_plot_with_perpendicular_rotated(self, data, algorithm_instance, max_clusters=15):
+        data = self.check_2d_data(data=data)
+        sse = []
+        for k in range(1, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            sse_data = 0
+            for cluster in np.unique(algorithm_instance.labels_):
+                X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+                center_of_cluster = np.mean(X_cluster, axis=0)
+                sse_data += np.linalg.norm(X_cluster-center_of_cluster)**2
+            sse.append(sse_data)
+        scaled_sse = (sse-np.min(sse))/(np.max(sse)-np.min(sse))
+        cluster_range = [k for k in range(1, max_clusters+1)]
+        scaled_cluster_range = (cluster_range-np.min(cluster_range))/(np.max(cluster_range)-np.min(cluster_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_cluster_range, y=scaled_sse, mode='lines+markers', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[1, 0], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        i = 0
+        a=1
+        b=1
+        c=-1
+        show=True
+        while(i < len(scaled_sse)):
+            x_0 = (b*(b*scaled_cluster_range[i]-a*scaled_sse[i])-a*c)/(a**2+b**2)
+            y_0 = (a*(-b*scaled_cluster_range[i]+a*scaled_sse[i])-b*c)/(a**2+b**2)
+            if(i > 0):
+                show=False
+            fig.add_trace(go.Scatter(x=[scaled_cluster_range[i], x_0], y=[scaled_sse[i], y_0], mode='lines+markers', marker=dict(color="grey"), name="Perpendicular lines", showlegend=show))
+            fig.add_trace(go.Scatter(x=[scaled_cluster_range[i], scaled_cluster_range[i]], y=[scaled_sse[i], 1-scaled_cluster_range[i]], mode='lines+markers', marker=dict(color="gold"), name="Perpendicular lines (rotated by 45 degrees)", showlegend=show))
+            i = i + 1
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized number of clusters (k)", yaxis_title="Normalized distortion Score", legend=dict(x=0.3, y=0.9), showlegend=True, title=f"<b>Normalized elbow and perpendicular lines<br>(rotated by 45 degrees)<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def difference_curve(self, data, algorithm_instance, max_clusters=15):
+        data = self.check_2d_data(data=data)
+        sse = []
+        for k in range(1, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            sse_data = 0
+            for cluster in np.unique(algorithm_instance.labels_):
+                X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+                center_of_cluster = np.mean(X_cluster, axis=0)
+                sse_data += np.linalg.norm(X_cluster-center_of_cluster)**2
+            sse.append(sse_data)
+        scaled_sse = (sse-np.min(sse))/(np.max(sse)-np.min(sse))
+        cluster_range = [k for k in range(1, max_clusters+1)]
+        scaled_cluster_range = (cluster_range-np.min(cluster_range))/(np.max(cluster_range)-np.min(cluster_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_cluster_range, y=scaled_sse, mode='lines+markers', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=scaled_cluster_range, y=(1-scaled_cluster_range)-scaled_sse, mode='lines+markers', line=dict(color="orange"), name="Difference curve"))
+        maximum_indice = np.argmax((1-scaled_cluster_range)-scaled_sse)
+        optimal_sse = sse[maximum_indice]
+        optimal_k = cluster_range[maximum_indice]
+        fig.add_vline(x=scaled_cluster_range[maximum_indice], line_dash="dash", line_color="red", line_width=2)
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized number of clusters (k)", yaxis_title="Normalized distortion Score", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Difference curve<b><br>Optimal SSE: {np.round(optimal_sse, 4)} for k={optimal_k}", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
     def elbow_plot(self, data, algorithm_instance, max_clusters=15):
         data = self.check_2d_data(data=data)
         sse = []
@@ -163,13 +304,35 @@ class Other_Plots():
         fig.add_vline(x=optimal_k, line_dash="dash", line_color="red", line_width=2)
         fig.show("png")
     
+    def silhouette_plot_for_various_clusters(self, data, algorithm_instance, max_clusters=10):
+        data = self.check_2d_data(data=data)
+        all_number_of_samples = data.shape[0]
+        for k in range(2, max_clusters+1):
+            algorithm_instance.set_params(n_clusters=k)
+            algorithm_instance.fit(data)
+            silhouette_coefficients = self.calculate_silhouette_coefficient(data=data, algorithm_instance=algorithm_instance)
+            average_silhouette_coefficient = np.mean(silhouette_coefficients)
+            y_lower = int(all_number_of_samples/5)
+            fig = go.Figure()
+            for cluster in np.unique(algorithm_instance.labels_):
+                indices_of_current_cluster = np.where(algorithm_instance.labels_ == cluster)[0]
+                silhouette_coefficients_of_current_cluster = np.sort(silhouette_coefficients[indices_of_current_cluster])
+                y_upper = y_lower + len(data[np.where(algorithm_instance.labels_ == cluster)])
+                fig.add_trace(go.Scatter(x=silhouette_coefficients_of_current_cluster, y=np.arange(y_lower, y_upper), fill='tozerox', mode='lines'))
+                fig.add_annotation(x=0.2, y=np.mean([y_lower, y_upper])-0.5, text=str(cluster), showarrow=False, arrowhead=1, font=dict(family="Times New Roman",size=25,color="Black"), yshift=0)
+                y_lower = y_upper+int(all_number_of_samples*0.02)
+            fig.add_vline(x=average_silhouette_coefficient, line_dash="dash", line_color="red", line_width=2)
+            fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Silhouette coefficient", yaxis_title="Cluster label", yaxis_showticklabels=False, yaxis_visible=False, showlegend=False, title=f"<b>Silhouette plot for various clusters<b><br>Average Silhouette Coefficient: {np.round(average_silhouette_coefficient, 4)}", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+            fig.show("png")
+    
     def calculate_silhouette_coefficient(self, data, algorithm_instance):
         algorithm_instance.fit(data)
-        silhouette_coefficients = []
+        silhouette_coefficients = np.zeros(shape=(data.shape[0],))
         for cluster in np.unique(algorithm_instance.labels_):
-            X_cluster = data[np.where(algorithm_instance.labels_ == cluster)]
+            indices_of_current_cluster = np.where(algorithm_instance.labels_ == cluster)[0]
+            X_cluster = data[indices_of_current_cluster]
             if(X_cluster.shape[0] == 1):
-                silhouette_coefficients.append([0])
+                silhouette_coefficients[indices_of_current_cluster] = [0]
                 continue
             a_i = 1/(X_cluster.shape[0]-1)*np.sum(np.sqrt(np.sum((X_cluster[:,np.newaxis]-X_cluster)**2, axis=2)), axis=1)
             min_bi = np.array([np.inf for i in range(X_cluster.shape[0])])
@@ -178,8 +341,7 @@ class Other_Plots():
                     X_other_cluster = data[np.where(algorithm_instance.labels_ == other_cluster)]
                     b_i = 1/(X_other_cluster.shape[0])*np.sum(np.sqrt(np.sum((X_cluster[:,np.newaxis]-X_other_cluster)**2, axis=2)), axis=1)
                     min_bi = np.min([min_bi, b_i], axis=0)
-            silhouette_coefficients.append(list((min_bi-a_i)/np.max([a_i, min_bi], axis=0)))
-        silhouette_coefficients = [item for sublist in silhouette_coefficients for item in sublist]
+            silhouette_coefficients[indices_of_current_cluster] = list((min_bi-a_i)/np.max([a_i, min_bi], axis=0))
         return silhouette_coefficients
     
     def gap_plot(self, data, algorithm_instance, number_of_reference_datasets=30, max_clusters=15):
@@ -219,4 +381,80 @@ class Other_Plots():
         fig.add_trace(go.Scatter(x=[k for k in range(1, max_clusters+1)], y=gaps, mode='lines+markers', error_y=dict(type='data', array=stds)))
         fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Number of clusters (k)", yaxis_title="Gap statistic (k)", showlegend=False, title=f"<b>Gap statistic<b><br>Maximum gap: {np.round(maximum_gap, 4)} for k={optimal_k}", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
         fig.add_vline(x=optimal_k, line_dash="dash", line_color="red", line_width=2)
+        fig.show("png")
+    
+    def plot_cluster_2d_data(self, data, model):
+        data = self.check_2d_data(data=data)
+        X_1 = data[:,0]
+        X_2 = data[:,1]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X_1, y=X_2, mode='markers', marker=dict(color=model.labels_, colorscale='Viridis', line=dict(color='black', width=1))))
+        fig.add_trace(go.Scatter(x=model.cluster_centers_[:,0], y=model.cluster_centers_[:,1], mode='markers', marker=dict(color='red', symbol='x', size=12, line=dict(color='black', width=1))))
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="X_1", yaxis_title="X_2", showlegend=False, title="<b>Clustered data<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def plot_cluster_2d_data_without_centers(self, data, model):
+        data = self.check_2d_data(data=data)
+        X_1 = data[:,0]
+        X_2 = data[:,1]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X_1, y=X_2, mode='markers', marker=dict(color=model.labels_, colorscale='Viridis', line=dict(color='black', width=1))))
+        fig.update_layout(template="simple_white", width=800, height=800, xaxis_title="X_1", yaxis_title="X_2", showlegend=False, title="<b>Clustered data<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def k_distance_plot(self, data, min_points):
+        data = self.check_2d_data(data=data)
+        model = NearestNeighbors(n_neighbors=min_points, metric="euclidean")
+        model.fit(data)
+        distances, indices = model.kneighbors(data)
+        distances = distances[:, 1:]
+        mean_of_distances = np.mean(distances, axis=1)
+        sorted_mean_of_distances = np.sort(mean_of_distances)[::-1]
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=[i for i in range(0, len(sorted_mean_of_distances))], y=sorted_mean_of_distances, mode='lines', name="Original curve"))
+        fig.add_trace(go.Scatter(x=[1, len(sorted_mean_of_distances)], y=[np.max(sorted_mean_of_distances), np.min(sorted_mean_of_distances)], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0.75, len(sorted_mean_of_distances)+0.5], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Mean distance to neighbors for each observation (descending)", yaxis_title="Mean distance", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>K-distance plot<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def k_distance_normalized_plot(self, data, min_points):
+        data = self.check_2d_data(data=data)
+        model = NearestNeighbors(n_neighbors=min_points, metric="euclidean")
+        model.fit(data)
+        distances, indices = model.kneighbors(data)
+        distances = distances[:, 1:]
+        mean_of_distances = np.mean(distances, axis=1)
+        sorted_mean_of_distances = np.sort(mean_of_distances)[::-1]
+        scaled_sorted_mean_of_distances = (sorted_mean_of_distances-np.min(sorted_mean_of_distances))/(np.max(sorted_mean_of_distances)-np.min(sorted_mean_of_distances))
+        data_range = [k for k in range(0, len(scaled_sorted_mean_of_distances))]
+        scaled_data_range = (data_range-np.min(data_range))/(np.max(data_range)-np.min(data_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_data_range, y=scaled_sorted_mean_of_distances, mode='lines', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=[0, 1], y=[1, 0], mode='lines', line=dict(color="green", dash='dash'), name="Diagonal line"))
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized sorted mean distances (descending)", yaxis_title="Normalized mean distances", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Normalized K-distance plot<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def difference_curve_epsilon(self, data, min_points):
+        data = self.check_2d_data(data=data)
+        model = NearestNeighbors(n_neighbors=min_points, metric="euclidean")
+        model.fit(data)
+        distances, indices = model.kneighbors(data)
+        distances = distances[:, 1:]
+        mean_of_distances = np.mean(distances, axis=1)
+        sorted_mean_of_distances = np.sort(mean_of_distances)[::-1]
+        scaled_sorted_mean_of_distances = (sorted_mean_of_distances-np.min(sorted_mean_of_distances))/(np.max(sorted_mean_of_distances)-np.min(sorted_mean_of_distances))
+        data_range = [k for k in range(0, len(scaled_sorted_mean_of_distances))]
+        scaled_data_range = (data_range-np.min(data_range))/(np.max(data_range)-np.min(data_range))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=scaled_data_range, y=scaled_sorted_mean_of_distances, mode='lines', name="Normalized curve"))
+        fig.add_trace(go.Scatter(x=scaled_data_range, y=(1-scaled_data_range)-scaled_sorted_mean_of_distances, mode='lines', line=dict(color="orange"), name="Difference curve"))
+        maximum_indice = np.argmax((1-scaled_data_range)-scaled_sorted_mean_of_distances)
+        optimal_epsilon = sorted_mean_of_distances[maximum_indice]
+        fig.add_vline(x=scaled_data_range[maximum_indice], line_dash="dash", line_color="red", line_width=2)
+        fig.update_yaxes(rangemode="tozero")
+        fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
+        fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized sorted mean distances (descending)", yaxis_title="Normalized mean distances", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Difference curve<b><br>Optimal epsilon: {np.round(optimal_epsilon, 4)}", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
