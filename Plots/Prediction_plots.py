@@ -40,7 +40,7 @@ class Prediction_plots():
             try:
                 column_names = np.array(column_names)
             except:
-                raise TypeError('Wrong type of column_names. It should be numpy array, or list..')
+                raise TypeError('Wrong type of column_names. It should be numpy array, or list.')
         if(nlargest != None):
             ranking = (np.argsort(np.argsort(-np.array(feature_importances))))
             support = np.where(ranking < nlargest, True, False)
