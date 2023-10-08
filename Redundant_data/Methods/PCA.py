@@ -83,6 +83,11 @@ class PCA():
         v *= signs[:, np.newaxis]
         return u, v
     
+    def set_params(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+    
     def check_fit(self, fit_used):
         if fit_used == False:
             raise AttributeError('PCA has to be fitted first.')
