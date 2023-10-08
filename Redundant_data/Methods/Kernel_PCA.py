@@ -97,6 +97,11 @@ class Kernel_PCA():
         self.components_ = normalized_eigenvectors
         return eigenvalues, normalized_eigenvectors
     
+    def set_params(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+    
     def check_fit(self, fit_used):
         if fit_used == False:
             raise AttributeError('Kernel_PCA has to be fitted first.')
