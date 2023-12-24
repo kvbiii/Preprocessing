@@ -21,6 +21,12 @@ class Other_Plots():
         if not isinstance(data, pd.DataFrame) and not isinstance(data, pd.Series) and not isinstance(data, np.ndarray) and not torch.is_tensor(data):
             raise TypeError('Wrong type of data. It should be pandas DataFrame, pandas Series, numpy array or torch tensor.')
         return np.array(data)
+    
+    def scatter_plot(self, X, y):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X[:,0], y=X[:,1], mode="markers", marker=dict(color=y, colorscale="Viridis", showscale=False)))
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Scatter Plot<b>", title_x=0.5, xaxis_title="X_1", yaxis_title="X_2", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
 
     def cross_validation_split(self, X, y, n_splits, cv, n_repeats=1):
         fig = go.Figure()
@@ -91,6 +97,13 @@ class Other_Plots():
         fig.update_layout(template="simple_white", width=600, height=600, title="<b>Eigenvectors<b>", title_x=0.5, xaxis_title="Feature 1", yaxis_title="Feature 2", font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
     
+    def scree_plot(self, fitted_fa):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=np.arange(1, len(fitted_fa.eigenvalues_)+1), y=fitted_fa.eigenvalues_, mode="lines+markers", marker=dict(line=dict(color='black', width=1)),))
+        fig.add_hline(y=1.0, line_dash="dash", line_color="red", line_width=3)
+        fig.update_layout(template="simple_white", width=600, height=600, title="<b>Scree Plot<b>", title_x=0.5, xaxis_title="Component number", yaxis_title="Eigenvalues", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
     def iversed_plot(self, fitted_pca, feature1, feature2, feature1_inversed, feature2_inversed):
         feature1 = self.check_data(data=feature1)
         feature2 = self.check_data(data=feature2)
@@ -100,6 +113,30 @@ class Other_Plots():
         fig.add_trace(go.Scatter(x=feature1, y=feature2, mode='markers', line=dict(color="lightblue"), name="Real Values"))
         fig.add_trace(go.Scatter(x=feature1_inversed, y=feature2_inversed, mode='markers', line=dict(color="blue"), name="Projected"))
         fig.update_layout(template="simple_white", width=600, height=600, title="<b>Inverse Transform<b><br>Ratio of explained variance: {}".format(np.round(fitted_pca.explained_variance_ratio_[0], 4)), title_x=0.5, xaxis_title="Feature 1", yaxis_title="Feature 2", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+
+    def cross_validation_components(self, X, y, list_of_categorical, reduction_algorithm, predictive_algorithm, cv, random_state):
+        list_of_continous = [feature for feature in X.columns.tolist() if feature not in list_of_categorical]
+        fig = go.Figure()
+        for n_components in range(1, len(list_of_continous)+1):
+            reduction_algorithm.set_params(n_components=n_components, random_state=random_state)
+            train_scores, valid_scores = [], []
+            for iter, (train_idx, valid_idx) in enumerate(cv.split(X, y)):
+                X_train, X_valid = X.iloc[train_idx, :], X.iloc[valid_idx, :]
+                y_train, y_valid = y.iloc[train_idx], y.iloc[valid_idx]
+                continous_data_train = X_train.drop(list_of_categorical, axis=1)
+                continous_data_valid = X_valid.drop(list_of_categorical, axis=1)
+                X_train_continous_transformed = reduction_algorithm.fit_transform(continous_data_train)
+                X_valid_continous_transformed = reduction_algorithm.transform(continous_data_valid)
+                X_train_transformed = np.concatenate([X_train_continous_transformed, X_train[list_of_categorical]], axis=1)
+                X_valid_transformed = np.concatenate([X_valid_continous_transformed, X_valid[list_of_categorical]], axis=1)
+                predictive_algorithm.fit(X_train_transformed, y_train)
+                y_train_prob = predictive_algorithm.predict_proba(X_train_transformed)[:, 1]
+                y_valid_prob = predictive_algorithm.predict_proba(X_valid_transformed)[:, 1]
+                train_scores.append(roc_auc_score(y_train, y_train_prob))
+                valid_scores.append(roc_auc_score(y_valid, y_valid_prob))
+            fig.add_trace(go.Box(y=valid_scores, name=str(n_components), marker=dict(line=dict(color='black', width=1)), showlegend=False))
+        fig.update_layout(template="simple_white", width=max(30*len(list_of_continous), 600), height=max(30*len(list_of_continous), 600), title=f"<b>Box Plot of valid scores<b>", title_x=0.5, yaxis_title="Valid Scores", xaxis_title="Number of components", xaxis=dict(showticklabels=True), font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
     
     def dendrogram_plot(self, children, distances, labels, truncate_mode="level", p=5, hline_level=None):
