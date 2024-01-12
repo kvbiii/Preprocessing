@@ -76,6 +76,15 @@ class Other_Plots():
             fig.add_annotation(x=hoeffding_ranks[feature], y=spearman_ranks[feature], text=feature, showarrow=False, arrowhead=1, font=dict(family="Times New Roman",size=16,color="Black"), yshift=15)
         fig.update_layout(template="simple_white", width=600, height=600, title="<b>Scatter Plot of the ranks<b>", title_x=0.5, xaxis_title="Hoeffding Ranks", yaxis_title="Spearman Ranks", font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
+    
+    def lda_separation_plot(self, X_transformed, y):
+        fig = go.Figure()
+        if(X_transformed.shape[1] == 1):
+            fig.add_trace(go.Scatter(x=X_transformed[:, 0], mode="markers", marker=dict(color=y, colorscale="Viridis")))
+        else:
+            fig.add_trace(go.Scatter(x=X_transformed[:, 0], y=X_transformed[:, 1], mode="markers", marker=dict(color=y, colorscale="Viridis")))
+        fig.update_layout(template="simple_white", width=600, height=600, title=f"<b>LDA separation plot<b>", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
 
     def cumulative_explained_variance(self, fitted_pca):
         labels = [i+1 for i in range(0, fitted_pca.components_.shape[1])]
