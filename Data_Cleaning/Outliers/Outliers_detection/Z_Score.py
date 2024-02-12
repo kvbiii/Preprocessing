@@ -25,14 +25,15 @@ class Z_Score():
     def fit(self, data):
         data = self.check_data(data=data)
         data = self.check_for_object_columns(data=data)
-        self.std = np.std(data)
+        self.std_ = np.std(data)
+        self.mean_ = np.mean(data)
         self.fit_used = True
 
     def find_outliers(self, data):
         self.check_fit(fit_used=self.fit_used)
         data = self.check_data(data=data)
         data = self.check_for_object_columns(data=data)
-        self.indices_of_outliers_ = np.where((data < -3*self.std) | (data > 3*self.std))[0]
+        self.indices_of_outliers_ = np.where((data < self.mean_-3*self.std_) | (data > self.mean_+3*self.std_))[0]
         return self.indices_of_outliers_
     
     def remove_outliers(self, data):
