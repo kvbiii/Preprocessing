@@ -5,8 +5,9 @@ sys.path.append(str(path_root))
 from requirements import *
 
 class Z_Score():
-    def __init__(self):
+    def __init__(self, threshold=3):
         self.fit_used = False
+        self.threshold = threshold
 
     def check_data(self, data):
         if not isinstance(data, pd.DataFrame) and not isinstance(data, pd.Series) and not isinstance(data, np.ndarray) and not torch.is_tensor(data):
@@ -33,7 +34,7 @@ class Z_Score():
         self.check_fit(fit_used=self.fit_used)
         data = self.check_data(data=data)
         data = self.check_for_object_columns(data=data)
-        self.indices_of_outliers_ = np.where((data < self.mean_-3*self.std_) | (data > self.mean_+3*self.std_))[0]
+        self.indices_of_outliers_ = np.where(np.abs((data-self.mean_)/self.std_)>self.threshold)[0]
         return self.indices_of_outliers_
     
     def remove_outliers(self, data):
