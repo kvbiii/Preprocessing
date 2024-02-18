@@ -504,3 +504,64 @@ class Other_Plots():
         fig.update_xaxes(range=[0, 1.05], constrain='domain', linecolor='black')
         fig.update_layout(template="simple_white", width=600, height=600, xaxis_title="Normalized sorted mean distances (descending)", yaxis_title="Normalized mean distances", legend=dict(x=0.75, y=0.9), showlegend=True, title=f"<b>Difference curve<b><br>Optimal epsilon: {np.round(optimal_epsilon, 4)}", title_x=0.5, font=dict(family="Times New Roman",size=16,color="Black"))
         fig.show("png")
+    
+    def mahalanobis_plot(self, X, n_outliers, alpha=0.05):
+        X = self.check_2d_data(data=X)
+        X = np.concatenate([X, np.random.uniform(low=np.min(X)-3*np.std(X), high=np.max(X)+3*np.std(X), size=(n_outliers, 2))], axis=0)
+        empirical_cov = EmpiricalCovariance().fit(X)
+        x, y = np.meshgrid(np.linspace(np.min(X), np.max(X), 100), np.linspace(np.min(X), np.max(X), 100))
+        zz = np.c_[x.ravel(), y.ravel()]
+        mahalanobis_distance = empirical_cov.mahalanobis(zz)**0.5
+        mahalanobis_distance = mahalanobis_distance.reshape(x.shape)
+        threshold = np.sqrt(chi2.ppf(1-alpha, df=X.shape[1]))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X[:-n_outliers, 0], y=X[:-n_outliers, 1], mode="markers", marker=dict(color="blue", size=8), name="inliers", showlegend=True))
+        fig.add_trace(go.Scatter(x=X[-n_outliers:, 0], y=X[-n_outliers:, 1], mode="markers", marker=dict(color="red", size=8), name="outliers", showlegend=True))
+        fig.add_trace(go.Contour(x=x[0], y=y[:, 0], z=mahalanobis_distance, contours_coloring='lines', showscale=True, opacity=0.5, line=dict(width=2, dash="dash"), colorscale="Jet", colorbar=dict(title="Mahalanobis Distance", titleside="right", titlefont=dict(size=16), tickfont=dict(size=16))))
+        fig.add_trace(go.Contour(x=x[0], y=y[:, 0], z=mahalanobis_distance, contours_coloring='lines', showscale=False, opacity=1, line=dict(width=5, color="black"), colorscale="reds", contours=dict(start=threshold, end=threshold, size=1), showlegend=True, name=f"Threshold for alpha={alpha}"))
+        fig.update_layout(template="simple_white", width=1000, height=1000, title="<b>Mahalanobis<b>", title_x=0.5, xaxis_title="Feature 1", yaxis_title="Feature 2", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(title="", orientation="h", y=1.1, x=0.5, xanchor="center", yanchor="bottom", font=dict(size=16)))
+        fig.show("png")
+    
+    def mahalanobis_distance_plot(self, X, alpha=0.05):
+        X = self.check_2d_data(data=X)
+        empirical_cov = EmpiricalCovariance().fit(X)
+        mahal_emp_cov = empirical_cov.mahalanobis(X)**0.5
+        mahal_emp_cov = np.sort(mahal_emp_cov)
+        threshold = np.sqrt(chi2.ppf(1-alpha, df=X.shape[1]))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=np.arange(0, X.shape[0]), y=mahal_emp_cov, mode="lines", line=dict(color="blue", width=2), showlegend=False))
+        fig.add_trace(go.Scatter(x=np.arange(0, X.shape[0]), y=mahal_emp_cov, mode="markers", marker=dict(color="red", size=8), showlegend=False))
+        fig.add_shape(type="line", x0=0, y0=threshold, x1=X.shape[0], y1=threshold, line=dict(color="black", width=2, dash="dash"))
+        fig.update_layout(template="simple_white", width=800, height=800, title="<b>Mahalanobis distances of points<b>", title_x=0.5, xaxis_title="Index", yaxis_title="Mahalanobis distance", font=dict(family="Times New Roman",size=16,color="Black"))
+        fig.show("png")
+    
+    def isolation_forest_plot(self, X, n_outliers, contamination=0.05):
+        X = self.check_2d_data(data=X)
+        X = np.concatenate([X, np.random.uniform(low=np.min(X)-3*np.std(X), high=np.max(X)+3*np.std(X), size=(n_outliers, 2))], axis=0)
+        isolation_forest = IsolationForest(random_state=17, contamination=contamination)
+        isolation_forest.fit(X)
+        x, y = np.meshgrid(np.linspace(np.min(X), np.max(X), 100), np.linspace(np.min(X), np.max(X), 100))
+        zz = isolation_forest.decision_function(np.c_[x.ravel(), y.ravel()])
+        zz = zz.reshape(x.shape)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X[:-n_outliers, 0], y=X[:-n_outliers, 1], mode="markers", marker=dict(color="blue", size=8), name="inliers", showlegend=True))
+        fig.add_trace(go.Scatter(x=X[-n_outliers:, 0], y=X[-n_outliers:, 1], mode="markers", marker=dict(color="red", size=8), name="outliers", showlegend=True))
+        fig.add_trace(go.Contour(x=x[0], y=y[:, 0], z=zz, contours_coloring='lines', showscale=False, opacity=0.5, line=dict(width=2, dash="dash"), colorscale="Jet"))
+        fig.add_trace(go.Contour(x=x[0], y=y[:, 0], z=isolation_forest.predict(np.c_[x.ravel(), y.ravel()]).reshape(x.shape), contours_coloring='lines', showscale=False, opacity=1, line=dict(width=5), colorscale="reds", showlegend=True, name=f"Decision boundary for contamination={contamination}"))
+        fig.update_layout(template="simple_white", width=1000, height=1000, title="<b>Isolation Forest<b>", title_x=0.5, xaxis_title="Feature 1", yaxis_title="Feature 2", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(title="", orientation="h", y=1.1, x=0.5, xanchor="center", yanchor="bottom", font=dict(size=16)))
+        fig.show("png")
+    
+    def local_outlier_factor_plot(self, X, n_outliers, contamination=0.05):
+        X = self.check_2d_data(data=X)
+        X = np.concatenate([X, np.random.uniform(low=np.min(X)-3*np.std(X), high=np.max(X)+3*np.std(X), size=(n_outliers, 2))], axis=0)
+        lof = LocalOutlierFactor(n_neighbors=20, contamination=contamination)
+        lof.fit(X)
+        y_pred = lof.fit_predict(X)
+        scores = lof.negative_outlier_factor_
+        radius = (scores.max()-scores)/(scores.max()-scores.min())
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers", marker=dict(color='white', size=radius*100, line=dict(color='black', width=3)), showlegend=True, name="LOF scores"))
+        fig.add_trace(go.Scatter(x=X[:-n_outliers, 0], y=X[:-n_outliers, 1], mode="markers", marker=dict(color="blue", size=8), name="inliers", showlegend=True))
+        fig.add_trace(go.Scatter(x=X[-n_outliers:, 0], y=X[-n_outliers:, 1], mode="markers", marker=dict(color="red", size=8), name="outliers", showlegend=True))
+        fig.update_layout(template="simple_white", width=1000, height=1000, title="<b>Local Outlier Factor<b>", title_x=0.5, xaxis_title="Feature 1", yaxis_title="Feature 2", font=dict(family="Times New Roman",size=16,color="Black"), legend=dict(title="", orientation="h", y=1.1, x=0.5, xanchor="center", yanchor="bottom", font=dict(size=16)))
+        fig.show("png")
