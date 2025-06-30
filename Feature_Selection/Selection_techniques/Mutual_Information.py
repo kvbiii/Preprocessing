@@ -1,9 +1,8 @@
 import typing
 import numpy as np
 import pandas as pd
-from scipy.spatial import KDTree
 from scipy.special import digamma
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import NearestNeighbors, KDTree
 
 
 class MutualInformation:
@@ -98,7 +97,6 @@ class MutualInformation:
                     "Length of discrete_features list should be less or equal to the number of features in X."
                 )
             if all(isinstance(i, np.bool_) for i in discrete_features):
-                print("A")
                 return np.array(discrete_features)
             return np.array(
                 [True if i in discrete_features else False for i in range(X.shape[1])]
