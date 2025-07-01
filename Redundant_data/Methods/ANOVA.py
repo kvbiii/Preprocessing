@@ -1,18 +1,18 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import f
-import typing
+from typing import Union, Tuple
 
 
 class ANOVA:
     def check_X(
-        self, X: typing.Union[pd.DataFrame, pd.Series, np.ndarray]
+        self, X: pd.DataFrame | pd.Series | np.ndarray
     ) -> np.ndarray:
         """
         Check if X is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
 
         Args:
-            X: (Union[pd.DataFrame, pd.Series, np.ndarray]): input data.
+            X: (pd.DataFrame | pd.Series | np.ndarray]): input data.
 
         Returns:
             X: (np.ndarray): converted input data.
@@ -31,7 +31,7 @@ class ANOVA:
         return X
 
     def check_y(
-        self, y: typing.Union[pd.DataFrame, pd.Series, np.ndarray]
+        self, y: pd.DataFrame| pd.Series | np.ndarray
     ) -> np.ndarray:
         """
         Check if y is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
@@ -213,7 +213,7 @@ class ANOVA:
         Args:
             p_value: (float): p value.
             alpha: (float): significance level.
-        
+
         Returns:
             bool: (bool): True if H0 is not rejected, False otherwise.
         """
