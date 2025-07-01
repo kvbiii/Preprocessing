@@ -1,21 +1,18 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import f
-from typing import Union, Tuple
 
 
 class ANOVA:
-    def check_X(
-        self, X: pd.DataFrame | pd.Series | np.ndarray
-    ) -> np.ndarray:
+    def check_X(self, X: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
         """
         Check if X is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
 
         Args:
-            X: (pd.DataFrame | pd.Series | np.ndarray]): input data.
+            X (pd.DataFrame | pd.Series | np.ndarray): Input data.
 
         Returns:
-            X: (np.ndarray): converted input data.
+            np.ndarray: Converted input data.
         """
         if (
             not isinstance(X, pd.DataFrame)
@@ -30,17 +27,15 @@ class ANOVA:
             X = X[None, :]
         return X
 
-    def check_y(
-        self, y: pd.DataFrame| pd.Series | np.ndarray
-    ) -> np.ndarray:
+    def check_y(self, y: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
         """
         Check if y is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
 
         Args:
-            y: (Union[pd.DataFrame, pd.Series, np.ndarray]): target data.
+            y (pd.DataFrame | pd.Series | np.ndarray): Target data.
 
         Returns:
-            y: (np.ndarray): converted target data.
+            np.ndarray: Converted target data.
         """
         if (
             not isinstance(y, pd.DataFrame)
@@ -60,10 +55,10 @@ class ANOVA:
         Check if X contains object columns and convert it to numeric data.
 
         Args:
-            X: (np.ndarray): input data.
+            X (np.ndarray): Input data.
 
         Returns:
-            X: (np.ndarray): converted input data.
+            np.ndarray: Converted input data.
         """
         X = pd.DataFrame(X)
         if X.select_dtypes(include=np.number).shape[1] != X.shape[1]:
@@ -74,20 +69,20 @@ class ANOVA:
 
     def fit(
         self,
-        X: typing.Union[pd.DataFrame, pd.Series, np.ndarray],
-        y: typing.Union[pd.DataFrame, pd.Series, np.ndarray],
+        X: pd.DataFrame | pd.Series | np.ndarray,
+        y: pd.DataFrame | pd.Series | np.ndarray,
         alpha: float = 0.05,
     ):
         """
         Perform ANOVA test.
 
         Args:
-            X (Union[pd.DataFrame, pd.Series, np.ndarray]): input data.
-            y (Union[pd.DataFrame, pd.Series, np.ndarray]): target data.
-            alpha (float): significance level.
+            X (pd.DataFrame | pd.Series | np.ndarray): Input data.
+            y (pd.DataFrame | pd.Series | np.ndarray): Target data.
+            alpha (float, optional): Significance level. Defaults to 0.05.
 
         Returns:
-            self: fitted instance of the class.
+            self: Fitted instance of the class.
         """
         X = self.check_X(X)
         X = self.check_for_object_columns(X)
@@ -120,17 +115,18 @@ class ANOVA:
 
     def crosstab_creation(
         self, X: np.ndarray, y: np.ndarray
-    ) -> typing.Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Create crosstab with means and frequencies.
 
         Args:
-            X (np.ndarray): input data.
-            y (np.ndarray): target data.
+            X (np.ndarray): Input data.
+            y (np.ndarray): Target data.
 
         Returns:
-            crosstab_means (np.ndarray): crosstab with means.
-            crosstab_frequency (np.ndarray): crosstab with frequencies.
+            tuple[np.ndarray, np.ndarray]: A tuple containing:
+                - crosstab_means (np.ndarray): Crosstab with means.
+                - crosstab_frequency (np.ndarray): Crosstab with frequencies.
         """
         crosstab_means = np.array(
             pd.crosstab(index=X, columns="Mean", values=y, aggfunc="mean")
@@ -145,12 +141,12 @@ class ANOVA:
         Calculate Sa^2.
 
         Args:
-            y (np.ndarray): target data.
-            crosstab_means (np.ndarray): crosstab with means.
-            crosstab_frequency (np.ndarray): crosstab with frequencies.
+            y (np.ndarray): Target data.
+            crosstab_means (np.ndarray): Crosstab with means.
+            crosstab_frequency (np.ndarray): Crosstab with frequencies.
 
         Returns:
-            Sa^2 (float): Square of Sa.
+            float: Square of Sa.
         """
         return (
             1
@@ -165,12 +161,12 @@ class ANOVA:
         Calculate Se^2.
 
         Args:
-            y (np.ndarray): target data.
-            crosstab_means (np.ndarray): crosstab with means.
-            crosstab_frequency (np.ndarray): crosstab with frequencies.
+            y (np.ndarray): Target data.
+            crosstab_means (np.ndarray): Crosstab with means.
+            crosstab_frequency (np.ndarray): Crosstab with frequencies.
 
         Returns:
-            Se^2 (float): Square of Se.
+            float: Square of Se.
         """
         return (
             1
@@ -184,11 +180,11 @@ class ANOVA:
 
         Args:
             F_test (float): F test statistic.
-            dfn (int): degrees of freedom numerator.
-            dfd (int): degrees of freedom denominator.
+            dfn (int): Degrees of freedom numerator.
+            dfd (int): Degrees of freedom denominator.
 
         Returns:
-            p_value (float): p value of F test.
+            float: P-value of F test.
         """
         return 1 - f.cdf(F_test, dfn, dfd)
 
@@ -197,12 +193,12 @@ class ANOVA:
         Calculate critical value.
 
         Args:
-            dfn (int): degrees of freedom numerator.
-            dfd (int): degrees of freedom denominator.
-            alpha (float): significance level.
+            dfn (int): Degrees of freedom numerator.
+            dfd (int): Degrees of freedom denominator.
+            alpha (float): Significance level.
 
         Returns:
-            critical_value (float): critical value.
+            float: Critical value.
         """
         return f.isf(q=alpha, dfn=dfn, dfd=dfd)
 
@@ -211,11 +207,11 @@ class ANOVA:
         Perform statistical inference.
 
         Args:
-            p_value: (float): p value.
-            alpha: (float): significance level.
+            p_value (float): P-value.
+            alpha (float): Significance level.
 
         Returns:
-            bool: (bool): True if H0 is not rejected, False otherwise.
+            bool: True if H0 is not rejected, False otherwise.
         """
         if p_value >= alpha:
             return True
