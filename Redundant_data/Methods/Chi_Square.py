@@ -1,22 +1,19 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import chi2
-import typing
 import warnings
 
 
 class Chi_Square_Test:
-    def check_X(
-        self, X: typing.Union[pd.DataFrame, pd.Series, np.ndarray]
-    ) -> np.ndarray:
+    def check_X(self, X: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
         """
         Check if X is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
 
         Args:
-            X: (Union[pd.DataFrame, pd.Series, np.ndarray]): input data.
+            X (pd.DataFrame | pd.Series | np.ndarray): Input data.
 
         Returns:
-            X: (np.ndarray): converted input data.
+            np.ndarray: Converted input data.
         """
         if (
             not isinstance(X, pd.DataFrame)
@@ -31,17 +28,15 @@ class Chi_Square_Test:
             X = X[None, :]
         return X
 
-    def check_y(
-        self, y: typing.Union[pd.DataFrame, pd.Series, np.ndarray]
-    ) -> np.ndarray:
+    def check_y(self, y: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
         """
         Check if y is pandas DataFrame, pandas Series or numpy array and convert it to numpy array.
 
         Args:
-            y: (Union[pd.DataFrame, pd.Series, np.ndarray]): target data.
+            y (pd.DataFrame | pd.Series | np.ndarray): Target data.
 
         Returns:
-            y: (np.ndarray): converted target data.
+            np.ndarray: Converted target data.
         """
         if (
             not isinstance(y, pd.DataFrame)
@@ -56,39 +51,21 @@ class Chi_Square_Test:
             y = y.squeeze()
         return y
 
-    def check_for_object_columns(self, X: np.ndarray) -> np.ndarray:
-        """
-        Check if X contains object columns and convert it to numeric data.
-
-        Args:
-            X: (np.ndarray): input data.
-
-        Returns:
-            X: (np.ndarray): converted input data.
-        """
-        X = pd.DataFrame(X)
-        if X.select_dtypes(include=np.number).shape[1] != X.shape[1]:
-            raise TypeError(
-                "Your data contains object or string columns. Numeric data is obligated."
-            )
-        return np.array(X)
-
     def fit(
         self,
-        X: typing.Union[pd.DataFrame, pd.Series, np.ndarray],
-        y: typing.Union[pd.DataFrame, pd.Series, np.ndarray],
+        X: pd.DataFrame | pd.Series | np.ndarray,
+        y: pd.DataFrame | pd.Series | np.ndarray,
         alpha: float = 0.05,
     ):
         """
         Perform Chi Square test.
 
         Args:
-            X: (Union[pd.DataFrame, pd.Series, np.ndarray]): input data.
-            y: (Union[pd.DataFrame, pd.Series, np.ndarray]): target data.
-            alpha: (float): significance level.
+            X (pd.DataFrame | pd.Series | np.ndarray): Input data.
+            y (pd.DataFrame | pd.Series | np.ndarray): Target data.
+            alpha (float, optional): Significance level. Defaults to 0.05.
         """
         X = self.check_X(X)
-        X = self.check_for_object_columns(X)
         y = self.check_y(y)
         self.crosstab_ = self.crosstab_creation(X=X, y=y)
         self.check_assumptions(crosstab=self.crosstab_)
@@ -110,23 +87,23 @@ class Chi_Square_Test:
         Create crosstab from input data.
 
         Args:
-            X: (np.ndarray): input data.
-            y: (np.ndarray): target data.
+            X (np.ndarray): Input data.
+            y (np.ndarray): Target data.
 
         Returns:
-            crosstab: (np.ndarray): crosstab.
+            np.ndarray: Crosstab.
         """
         return np.array(pd.crosstab(X, y, margins=True))
 
-    def check_assumptions(self, crosstab: np.ndarray) -> bool:
+    def check_assumptions(self, crosstab: np.ndarray) -> None:
         """
         Check if assumptions for Chi Square test are met.
 
         Args:
-            crosstab: (np.ndarray): crosstab.
+            crosstab (np.ndarray): Crosstab.
 
-        Raises:
-            Warning: if assumptions are not met.
+        Warns:
+            UserWarning: If assumptions are not met.
         """
         if not all(i <= 5 for i in crosstab.flatten()):
             self.assumption_ = False
@@ -139,10 +116,10 @@ class Chi_Square_Test:
         Calculate Chi Square statistic.
 
         Args:
-            crosstab: (np.ndarray): crosstab.
+            crosstab (np.ndarray): Crosstab.
 
         Returns:
-            chi_square: (float): Chi Square statistic.
+            float: Chi Square statistic.
         """
         chi_square = 0
         for row in range(0, crosstab.shape[0] - 1):
@@ -157,23 +134,23 @@ class Chi_Square_Test:
         Calculate degrees of freedom.
 
         Args:
-            crosstab: (np.ndarray): crosstab.
+            crosstab (np.ndarray): Crosstab.
 
         Returns:
-            df: (int): degrees of freedom.
+            int: Degrees of freedom.
         """
         return (crosstab.shape[0] - 2) * (crosstab.shape[1] - 2)
 
     def calculate_p_value(self, test_statistic: float, df: int) -> float:
         """
-        Calculate p value.
+        Calculate p-value.
 
         Args:
-            test_statistic: (float): test statistic.
-            df: (int): degrees of freedom.
+            test_statistic (float): Test statistic.
+            df (int): Degrees of freedom.
 
         Returns:
-            p_value: (float): p value.
+            float: P-value.
         """
         return 1 - chi2.cdf(x=test_statistic, df=df)
 
@@ -182,11 +159,11 @@ class Chi_Square_Test:
         Calculate critical value.
 
         Args:
-            df: (int): degrees of freedom.
-            alpha: (float): significance level.
+            df (int): Degrees of freedom.
+            alpha (float): Significance level.
 
         Returns:
-            critical_value: (float): critical value.
+            float: Critical value.
         """
         return chi2.isf(q=alpha, df=df)
 
@@ -195,11 +172,11 @@ class Chi_Square_Test:
         Perform statistical inference.
 
         Args:
-            p_value: (float): p value.
-            alpha: (float): significance level.
+            p_value (float): P-value.
+            alpha (float): Significance level.
 
         Returns:
-            bool: (bool): True if H0 is not rejected, False otherwise.
+            bool: True if H0 is not rejected, False otherwise.
         """
         if p_value >= alpha:
             return True
@@ -211,11 +188,11 @@ class Chi_Square_Test:
         Calculate V Cramer test statistic.
 
         Args:
-            test_statistic: (float): test statistic.
-            crosstab: (np.ndarray): crosstab.
+            test_statistic (float): Test statistic.
+            crosstab (np.ndarray): Crosstab.
 
         Returns:
-            V_Cramer: (float): V Cramer test statistic.
+            float: V Cramer test statistic.
         """
         return (
             test_statistic
@@ -224,3 +201,21 @@ class Chi_Square_Test:
                 * np.min([crosstab.shape[0] - 2, crosstab.shape[1] - 2])
             )
         ) ** 0.5
+
+
+if __name__ == "__main__":
+    # Example usage
+    data = pd.DataFrame(
+        {"feature1": ["A", "B", "A", "B", "A"], "feature2": ["X", "Y", "X", "Y", "X"]}
+    )
+    target = pd.Series(["Yes", "No", "Yes", "No", "Yes"])
+
+    chi_square_test = Chi_Square_Test()
+    chi_square_test.fit(X=data["feature1"], y=target)
+
+    print("Chi Square Statistic:", chi_square_test.test_statistic_)
+    print("Degrees of Freedom:", chi_square_test.df_)
+    print("P-value:", chi_square_test.p_value_)
+    print("Critical Value:", chi_square_test.critical_value_)
+    print("Keep H0:", chi_square_test.keep_H0)
+    print("V Cramer:", chi_square_test.V_Cramera_)
