@@ -22,9 +22,7 @@ class ANOVA:
             raise TypeError(
                 "Wrong type of X. It should be pandas DataFrame, pandas Series, numpy array."
             )
-        X = np.array(X)
-        if X.ndim == 1:
-            X = X[None, :]
+        X = np.array(X).squeeze()
         return X
 
     def check_y(self, y: pd.DataFrame | pd.Series | np.ndarray) -> np.ndarray:
@@ -50,29 +48,12 @@ class ANOVA:
             y = y.squeeze()
         return y
 
-    def check_for_object_columns(self, X: np.ndarray) -> np.ndarray:
-        """
-        Check if X contains object columns and convert it to numeric data.
-
-        Args:
-            X (np.ndarray): Input data.
-
-        Returns:
-            np.ndarray: Converted input data.
-        """
-        X = pd.DataFrame(X)
-        if X.select_dtypes(include=np.number).shape[1] != X.shape[1]:
-            raise TypeError(
-                "Your data contains object or string columns. Numeric data is obligated."
-            )
-        return np.array(X)
-
     def fit(
         self,
         X: pd.DataFrame | pd.Series | np.ndarray,
         y: pd.DataFrame | pd.Series | np.ndarray,
         alpha: float = 0.05,
-    ):
+    ) -> "ANOVA":
         """
         Perform ANOVA test.
 
@@ -82,10 +63,9 @@ class ANOVA:
             alpha (float, optional): Significance level. Defaults to 0.05.
 
         Returns:
-            self: Fitted instance of the class.
+            ANOVA: Fitted instance of the class.
         """
         X = self.check_X(X)
-        X = self.check_for_object_columns(X)
         y = self.check_y(y)
         crosstab_means, crosstab_frequency = self.crosstab_creation(X=X, y=y)
         Sa_2 = self.calculate_Sa_squared(
@@ -108,10 +88,11 @@ class ANOVA:
         self.keep_H0 = self.statistical_inference(p_value=self.p_value_, alpha=alpha)
         self.summary_ = pd.DataFrame(
             {
-                "Catergory": np.unique(X),
+                "Category": np.unique(X),
                 "Mean of dependent variable": crosstab_means.squeeze(),
             }
         )
+        return self
 
     def crosstab_creation(
         self, X: np.ndarray, y: np.ndarray
@@ -128,10 +109,12 @@ class ANOVA:
                 - crosstab_means (np.ndarray): Crosstab with means.
                 - crosstab_frequency (np.ndarray): Crosstab with frequencies.
         """
-        crosstab_means = np.array(
-            pd.crosstab(index=X, columns="Mean", values=y, aggfunc="mean")
-        )
-        crosstab_frequency = np.array(pd.crosstab(index=X, columns="Sum"))
+        X_series = pd.Series(X)
+        y_series = pd.Series(y)
+        crosstab_means = y_series.groupby(X_series).mean().values
+        crosstab_frequency = y_series.groupby(X_series).count().values
+        crosstab_means = crosstab_means.reshape(-1, 1)
+        crosstab_frequency = crosstab_frequency.reshape(-1, 1)
         return crosstab_means, crosstab_frequency
 
     def calculate_Sa_squared(
@@ -171,7 +154,17 @@ class ANOVA:
         return (
             1
             / (y.shape[0] - crosstab_means.shape[0])
-            * (np.sum(y**2) - np.sum(crosstab_frequency * crosstab_means**2))
+            * (
+                np.sum(
+                    (
+                        y
+                        - np.repeat(
+                            crosstab_means.squeeze(), crosstab_frequency.squeeze()
+                        )
+                    )
+                    ** 2
+                )
+            )
         )
 
     def calculate_p_value_F_test(self, F_test: float, dfn: int, dfd: int) -> float:
@@ -213,7 +206,19 @@ class ANOVA:
         Returns:
             bool: True if H0 is not rejected, False otherwise.
         """
-        if p_value >= alpha:
-            return True
-        else:
-            return False
+        return p_value >= alpha
+
+
+if __name__ == "__main__":
+    np.random.seed(17)
+    groups = np.array([1, 1, 1, 2, 2, 2, 3, 3, 3])
+    values = np.array([2.3, 2.1, 2.5, 3.2, 3.0, 3.4, 1.8, 1.9, 2.0])
+    anova = ANOVA()
+    anova.fit(X=groups, y=values)
+
+    print(f"Test statistic (F): {anova.test_statistic_:.4f}")
+    print(f"P-value: {anova.p_value_:.4f}")
+    print(f"Critical value: {anova.critical_value_:.4f}")
+    print(f"Keep H0: {anova.keep_H0}")
+    print("\nSummary:")
+    print(anova.summary_)
