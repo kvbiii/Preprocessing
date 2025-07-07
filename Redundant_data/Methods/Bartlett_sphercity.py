@@ -15,6 +15,8 @@ def bartlett_sphercity(data: np.ndarray) -> tuple[float, float]:
             - p_value (float): P-value.
     """
     corr_matrix = np.corrcoef(data, rowvar=False)
+    eps = 1e-8
+    corr_matrix += np.eye(corr_matrix.shape[0]) * eps
     N = data.shape[0]
     M = data.shape[1]
     chi_square = -(N - 1 - (2 * M - 5) / 6) * np.log(np.linalg.det(corr_matrix))
